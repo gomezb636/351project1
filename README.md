@@ -1,1 +1,1 @@
-# 351project1
+# CPSC-351-Project-1
