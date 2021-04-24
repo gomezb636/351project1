@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "msg.h"    /* For the message struct */
-
+#include <iostream>
 
 /* The size of the shared memory chunk */
 #define SHARED_MEMORY_CHUNK_SIZE 1000
@@ -40,20 +40,43 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 		    is unique system-wide among all System V objects. Two objects, on the other hand,
 		    may have the same key.
 	 */
-			key_t key = ftok("keyfile.txt", 'a');
+	 // generate key and error check
+		key_t key = ftok("keyfile.txt", 'a');
+		if(key == -1) {
+	 	    perror("EROR:: generating key");
+	 			exit(1);
+	 	 }
 
-	/* TODO: Allocate a piece of shared memory. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE. */
-	// Luke's part
-	shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, 0666);
-	msqid = msgget(key, 0666);
-	/* TODO: Attach to the shared memory */
+	 	/* TODO: Allocate a piece of shared memory. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE. */
+		/* TODO: Attach to the shared memory */
+		/* TODO: Create a message queue */
+		/* Store the IDs and the pointer to the shared memory region in the corresponding parameters */
+
+	// allocate piece of shared memory and error check
+	shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, IPC_CREAT|0666);
+	if(shmid == -1) {
+		 perror("ERROR:: shared segment already exist for this key");
+		 shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE,0666);
+		 exit(1);
+	 }
+
+	// create message queue and error check
+	msqid = msgget(key, IPC_CREAT|0666);
+	if(msqid == -1) {
+		perror("ERROR:: message queue already exist for this key");
+		msqid = msgget(key,0666);
+		exit(1);
+	}
+
+	// attach to shared memory and error check
 	sharedMemPtr = shmat(shmid, NULL, 0);
+	if(sharedMemPtr == (char*)-1) {
+		perror("ERROR:: not attached with segment");
+		exit(1);
+	}
 
-	/* TODO: Create a message queue */
 	//Luke's part
-
 	/* Store the IDs and the pointer to the shared memory region in the corresponding parameters */
-
 
 }
 
@@ -63,8 +86,15 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
  */
 void mainLoop()
 {
+	std::cout << "In main loop\n";
 	/* The size of the mesage */
-	int msgSize = 0;
+	int msgSize = 1;
+
+	// buffer to store send message
+	message sndMsg;
+
+	// buffer to store receive message
+	message rcvMsg;
 
 	/* Open the file for writing */
 	FILE* fp = fopen(recvFileName, "w");
@@ -87,11 +117,6 @@ void mainLoop()
      * "recvfile"
      */
 
-		message sndMsg;
-		message rcvMsg;
-		// get size
-		msgSize = rcvMsg.size;
-
 	/* Keep receiving until the sender set the size to 0, indicating that
  	 * there is no more data to send
  	 */
@@ -100,6 +125,17 @@ void mainLoop()
 	while(msgSize != 0)
 	{
 		/* If the sender is not telling us that we are done, then get to work */
+
+		// recieve message and error check
+		if (msgrcv(msqid, &rcvMsg, sizeof(struct message) - sizeof(long), SENDER_DATA_TYPE, 0) == -1) {
+				//error checking
+			 perror("msgrcv");
+			 exit(-1);
+	  }
+
+		//getting the message size
+		msgSize = rcvMsg.size;
+
 		if(msgSize != 0)
 		{
 			/* Save the shared memory to file */
@@ -112,8 +148,14 @@ void mainLoop()
  			 * I.e. send a message of type RECV_DONE_TYPE (the value of size field
  			 * does not matter in this case).
  			 */
+				// setting type of message to RECV_DONE_TYPE
 			  sndMsg.mtype = RECV_DONE_TYPE;
-			  //theMessage.size = 0;
+				// sending message
+				if (msgsnd(msqid, &sndMsg, sizeof(struct message) - sizeof(long), 0) == -1)
+					 {
+						 //checking error
+							perror("msgsnd");
+				   }
 		}
 		/* We are done */
 		else
@@ -122,6 +164,7 @@ void mainLoop()
 			fclose(fp);
 		}
 	}
+	std::cout << "Message received!\n";
 }
 
 
@@ -136,16 +179,24 @@ void mainLoop()
 void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
 {
 	/* TODO: Detach from shared memory */
-	shmdt(sharedMemPtr);
+	// and error check if failed to detach
+	if (shmdt(sharedMemPtr) == -1) {
+ 	 perror("shmdt");
+ 	 exit(-1);
+  }
 
 	/* TODO: Deallocate the shared memory chunk */
-	shmctl(shmid, IPC_RMID, NULL);
+	// and error check
+	if (shmctl(shmid, IPC_RMID, NULL) == -1) {
+		perror("shmctl");
+		exit(-1);
+	}
 
 	/* TODO: Deallocate the message queue */
-	//Luke's part
+	// and error check
 	if (msgctl(msqid, IPC_RMID, NULL) == -1) {
-		perror("msgctl"); //If Message Queue isn't destroyed
-		exit(-1); // Exits program
+		perror("msgctl");
+		exit(-1);
 	}
 }
 

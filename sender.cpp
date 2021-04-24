@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <iostream>
 #include "msg.h"    /* For the message struct */
+#include <iostream>
 
 /* The size of the shared memory chunk */
 #define SHARED_MEMORY_CHUNK_SIZE 1000
@@ -35,23 +36,40 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 		    is unique system-wide among all SYstem V objects. Two objects, on the other hand,
 		    may have the same key.
 	 */
-	 key_t k = ftok("keyfile.txt", 'a');
-
-
+	 // generate key and error check
+	 key_t key = ftok("keyfile.txt", 'a');
+	 if(key == -1) {
+		 perror("EROR:: generating key");
+	   exit(1);
+	 }
 
 	/* TODO: Get the id of the shared memory segment. The size of the segment must be SHARED_MEMORY_CHUNK_SIZE */
 	/* TODO: Attach to the shared memory */
 	/* TODO: Attach to the message queue */
 	/* Store the IDs and the pointer to the shared memory region in the corresponding parameters */
 
-	//gets id of shared memory segment
-	shmid = shmget(k, SHARED_MEMORY_CHUNK_SIZE, 0666);
+	//gets id of shared memory segment and error check
+	shmid = shmget(key, SHARED_MEMORY_CHUNK_SIZE, 0666);
+	if(shmid == -1) {
+		perror("ERROR:: shared segment ");
 
-	//attaches to shared memory with shmat
+		exit(1);
+	}
+
+	// gets id of message queue and error check
+	msqid = msgget(key, 0666);
+	if(msqid == -1) {
+		perror("ERROR:: message queue");
+
+		exit(1);
+	}
+
+	//attaches to shared memory with shmat and error check
 	sharedMemPtr = shmat(shmid, NULL, 0);
-
-	// gets id of message queue
-	msqid = msgget(k, 0666);
+	if(sharedMemPtr == (char*)-1) {
+		perror("ERROR:: not attached with segment");
+		exit(1);
+	}
 }
 
 /**
@@ -66,7 +84,11 @@ void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
 	/* TODO: Detach from shared memory */
 
 	// program detatches from shared memory segment
-	shmdt(sharedMemPtr);
+	// and error checks
+	if (shmdt(sharedMemPtr) == -1) {
+		perror("shmdt"); // If Shared memory failed to detach
+		exit(-1);
+	}
 }
 
 /**
@@ -81,6 +103,8 @@ void send(const char* fileName)
 
 	/* A buffer to store message we will send to the receiver. */
 	message sndMsg;
+	// set message type
+	sndMsg.mtype = SENDER_DATA_TYPE;
 
 	/* A buffer to store message received from the receiver. */
 	message rcvMsg;
@@ -109,12 +133,22 @@ void send(const char* fileName)
 		/* TODO: Send a message to the receiver telling them that the data is ready
  		 * (message of type SENDER_DATA_TYPE)
  		 */
-		 sndMsg.mtype = SENDER_DATA_TYPE;
+		 //sends message and error checks
+		 if (msgsnd(msqid, &sndMsg, sizeof(struct message) - sizeof(long), 0) == -1)
+		 {
+			 //checking error
+      	perror("msgsnd");
+    	}
 
 		/* TODO: Wait until the receiver sends us a message of type RECV_DONE_TYPE telling us
  		 * that he finished saving the memory chunk.
  		 */
-		 rcvMsg.mtype = RECV_DONE_TYPE;
+		 if (msgrcv(msqid, &rcvMsg, sizeof(struct message) - sizeof(long), RECV_DONE_TYPE, 0) == -1)
+        {
+              //checking error
+        			perror("msgrcv");
+        			exit(-1);
+  	  	}
 	}
 
 
@@ -125,6 +159,11 @@ void send(const char* fileName)
 
 		// tells receiver we have nothing more to send
 		sndMsg.size = 0;
+		// send message and error check
+		if (msgsnd(msqid, &sndMsg, sizeof(struct message) - sizeof(long) , 0) == -1) {
+      //checking error
+   		perror("msgsnd");
+   	}
 
 	/* Close the file */
 	fclose(fp);
