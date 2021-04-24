@@ -75,7 +75,6 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 		exit(1);
 	}
 
-	//Luke's part
 	/* Store the IDs and the pointer to the shared memory region in the corresponding parameters */
 
 }
@@ -120,7 +119,6 @@ void mainLoop()
 	/* Keep receiving until the sender set the size to 0, indicating that
  	 * there is no more data to send
  	 */
-	  //Luke's part
 
 	while(msgSize != 0)
 	{
@@ -128,7 +126,6 @@ void mainLoop()
 
 		// recieve message and error check
 		if (msgrcv(msqid, &rcvMsg, sizeof(struct message) - sizeof(long), SENDER_DATA_TYPE, 0) == -1) {
-				//error checking
 			 perror("msgrcv");
 			 exit(-1);
 	  }
@@ -150,10 +147,9 @@ void mainLoop()
  			 */
 				// setting type of message to RECV_DONE_TYPE
 			  sndMsg.mtype = RECV_DONE_TYPE;
-				// sending message
+				// sending message and error checking
 				if (msgsnd(msqid, &sndMsg, sizeof(struct message) - sizeof(long), 0) == -1)
 					 {
-						 //checking error
 							perror("msgsnd");
 				   }
 		}

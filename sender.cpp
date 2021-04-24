@@ -86,7 +86,7 @@ void cleanUp(const int& shmid, const int& msqid, void* sharedMemPtr)
 	// program detatches from shared memory segment
 	// and error checks
 	if (shmdt(sharedMemPtr) == -1) {
-		perror("shmdt"); // If Shared memory failed to detach
+		perror("shmdt");
 		exit(-1);
 	}
 }
@@ -136,19 +136,16 @@ void send(const char* fileName)
 		 //sends message and error checks
 		 if (msgsnd(msqid, &sndMsg, sizeof(struct message) - sizeof(long), 0) == -1)
 		 {
-			 //checking error
       	perror("msgsnd");
     	}
 
 		/* TODO: Wait until the receiver sends us a message of type RECV_DONE_TYPE telling us
  		 * that he finished saving the memory chunk.
  		 */
-		 if (msgrcv(msqid, &rcvMsg, sizeof(struct message) - sizeof(long), RECV_DONE_TYPE, 0) == -1)
-        {
-              //checking error
-        			perror("msgrcv");
-        			exit(-1);
-  	  	}
+		 if (msgrcv(msqid, &rcvMsg, sizeof(struct message) - sizeof(long), RECV_DONE_TYPE, 0) == -1) {
+      			perror("msgrcv");
+      			exit(-1);
+	  	}
 	}
 
 
@@ -161,7 +158,6 @@ void send(const char* fileName)
 		sndMsg.size = 0;
 		// send message and error check
 		if (msgsnd(msqid, &sndMsg, sizeof(struct message) - sizeof(long) , 0) == -1) {
-      //checking error
    		perror("msgsnd");
    	}
 
