@@ -148,24 +148,22 @@ void send(const char* fileName)
 	  	}
 	}
 
-
 	/** TODO: once we are out of the above loop, we have finished sending the file.
  	  * Lets tell the receiver that we have nothing more to send. We will do this by
  	  * sending a message of type SENDER_DATA_TYPE with size field set to 0.
 	  */
 
-		// tells receiver we have nothing more to send
-		sndMsg.size = 0;
-		// send message and error check
-		if (msgsnd(msqid, &sndMsg, sizeof(struct message) - sizeof(long) , 0) == -1) {
-   		perror("msgsnd");
-   	}
+	// tells receiver we have nothing more to send
+	sndMsg.size = 0;
+	// send message and error check
+	if (msgsnd(msqid, &sndMsg, sizeof(struct message) - sizeof(long) , 0) == -1) {
+ 		perror("msgsnd");
+ 	}
 
 	/* Close the file */
 	fclose(fp);
 
 }
-
 
 int main(int argc, char** argv)
 {

@@ -1,5 +1,6 @@
 # CPSC-351-Project-1
 
+
 CPSC 351-02
 
 Team Members:
@@ -16,4 +17,6 @@ To execute:
 4. "Message Received" will display
 5. recvfile will be generated and will contain the message "Hello world".
 
-We have included the recvfile generateed when we ran it; when running you can delete the recvfile and executable files and do steps written above to verify that it works properly.
+We have included the recvfile generated when we ran it; when testing our code,
+you can delete the recvfile and executable files and do steps written above to
+verify that it works properly.

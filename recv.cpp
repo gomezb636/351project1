@@ -31,19 +31,19 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 {
 
 	/* TODO: 1. Create a file called keyfile.txt containing string "Hello world" (you may do
- 		    so manually or from the code).
+ 		    			so manually or from the code).
 	         2. Use ftok("keyfile.txt", 'a') in order to generate the key.
-		 3. Use the key in the TODO's below. Use the same key for the queue
-		    and the shared memory segment. This also serves to illustrate the difference
-		    between the key and the id used in message queues and shared memory. The id
-		    for any System V object (i.e. message queues, shared memory, and sempahores)
-		    is unique system-wide among all System V objects. Two objects, on the other hand,
-		    may have the same key.
+		 		 	 3. Use the key in the TODO's below. Use the same key for the queue
+		    			and the shared memory segment. This also serves to illustrate the difference
+		    			between the key and the id used in message queues and shared memory. The id
+		    				for any System V object (i.e. message queues, shared memory, and sempahores)
+		    			is unique system-wide among all System V objects. Two objects, on the other hand,
+		    			may have the same key.
 	 */
 	 // generate key and error check
 		key_t key = ftok("keyfile.txt", 'a');
 		if(key == -1) {
-	 	    perror("EROR:: generating key");
+	 	    perror("ERROR:: generating key");
 	 			exit(1);
 	 	 }
 
@@ -75,8 +75,6 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
 		exit(1);
 	}
 
-	/* Store the IDs and the pointer to the shared memory region in the corresponding parameters */
-
 }
 
 
@@ -85,7 +83,7 @@ void init(int& shmid, int& msqid, void*& sharedMemPtr)
  */
 void mainLoop()
 {
-	std::cout << "In main loop\n";
+	std::cout << "Sending Message..." << std::endl;
 	/* The size of the mesage */
 	int msgSize = 1;
 
@@ -215,15 +213,16 @@ int main(int argc, char** argv)
  	 * queues and shared memory before exiting. You may add the cleaning functionality
  	 * in ctrlCSignal().
  	 */
-	 signal(SIGINT, ctrlCSignal);
-		/* Initialize */
-		init(shmid, msqid, sharedMemPtr);
+	signal(SIGINT, ctrlCSignal);
 
-		/* Go to the main loop */
-		mainLoop();
+	/* Initialize */
+	init(shmid, msqid, sharedMemPtr);
 
-		/** TODO: Detach from shared memory segment, and deallocate shared memory and message queue (i.e. call cleanup) **/
-		ctrlCSignal(0);
+	/* Go to the main loop */
+	mainLoop();
+
+	/** TODO: Detach from shared memory segment, and deallocate shared memory and message queue (i.e. call cleanup) **/
+	ctrlCSignal(0);
 
 	return 0;
 }
